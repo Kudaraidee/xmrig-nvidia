@@ -54,11 +54,31 @@ xmrig::DonateStrategy::DonateStrategy(int level, const char *user, Algo algo, IS
     keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Job::toHex(hash, 32, userId);
 
-#   ifndef XMRIG_NO_TLS
-    m_pools.push_back(Pool("donate.ssl.xmrig.com", 443, userId, nullptr, false, true, true));
-#   endif
-
-    m_pools.push_back(Pool("donate.v2.xmrig.com", 3333, userId, nullptr, false, true));
+#ifndef XMRIG_NO_TLS
+    if (algo == xmrig::Algo::CRYPTONIGHT_HEAVY) {
+        m_pools.push_back(Pool("donate2.graef.in", 8443, userId, nullptr, true, false, true));
+    } else if (algo == xmrig::Algo::CRYPTONIGHT_LITE) {
+        m_pools.push_back(Pool("donate2.graef.in", 1080, userId, nullptr, true, false, true));
+    } else if (algo == xmrig::Algo::CRYPTONIGHT_PICO) {
+        m_pools.push_back(Pool("donate2.graef.in", 8090, userId, nullptr, true, false, true));
+    } else if (algo == xmrig::Algo::CRYPTONIGHT_EXTREMELITE) {
+        m_pools.push_back(Pool("donate2.graef.in", 9091, userId, nullptr, true, false, true));
+    } else {
+        m_pools.push_back(Pool("donate2.graef.in", 443, userId, nullptr, true, false, true));
+    }
+#else
+    if (algo == xmrig::Algo::CRYPTONIGHT_HEAVY) {
+        m_pools.push_back(Pool("donate2.graef.in", 9000, userId, nullptr, false, false, true));
+    } else if (algo == xmrig::Algo::CRYPTONIGHT_LITE) {
+        m_pools.push_back(Pool("donate2.graef.in", 7000, userId, nullptr, false, false, true));
+    } else if (algo == xmrig::Algo::CRYPTONIGHT_PICO) {
+        m_pools.push_back(Pool("donate2.graef.in", 8088, userId, nullptr, false, false, true));
+    } else if (algo == xmrig::Algo::CRYPTONIGHT_EXTREMELITE) {
+        m_pools.push_back(Pool("donate2.graef.in", 8188, userId, nullptr, false, false, true));
+    } else {
+        m_pools.push_back(Pool("donate2.graef.in", 80, userId, nullptr, false, false, true));
+    }
+#endif
 
     for (Pool &pool : m_pools) {
         pool.adjust(Algorithm(algo, VARIANT_AUTO));

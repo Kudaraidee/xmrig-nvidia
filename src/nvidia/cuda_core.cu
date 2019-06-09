@@ -357,8 +357,8 @@ __global__ void cryptonight_core_gpu_phase2_double(
             __syncthreads();
 #           endif
 
-            myChunks[idx1 ^ 2 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk1 : chunk3) + bx1;
-            myChunks[idx1 ^ 4 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk3 : chunk1) + bx0;
+            myChunks[idx1 ^ 2 + sub] = ((VARIANT == xmrig::VARIANT_RWZ || VARIANT == xmrig::VARIANT_UPX2) ? chunk1 : chunk3) + bx1;
+            myChunks[idx1 ^ 4 + sub] = ((VARIANT == xmrig::VARIANT_RWZ || VARIANT == xmrig::VARIANT_UPX2) ? chunk3 : chunk1) + bx0;
             myChunks[idx1 ^ 6 + sub] = chunk2 + ax0;
         }
 
@@ -412,8 +412,8 @@ __global__ void cryptonight_core_gpu_phase2_double(
             __syncthreads( );
 #           endif
 
-            myChunks[idx1 ^ 2 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk1 : chunk3) + bx1;
-            myChunks[idx1 ^ 4 + sub] = ((VARIANT == xmrig::VARIANT_RWZ) ? chunk3 : chunk1) + bx0;
+            myChunks[idx1 ^ 2 + sub] = ((VARIANT == xmrig::VARIANT_RWZ || VARIANT == xmrig::VARIANT_UPX2) ? chunk1 : chunk3) + bx1;
+            myChunks[idx1 ^ 4 + sub] = ((VARIANT == xmrig::VARIANT_RWZ || VARIANT == xmrig::VARIANT_UPX2) ? chunk3 : chunk1) + bx0;
             myChunks[idx1 ^ 6 + sub] = chunk2 + ax0;
 
             ax0 += res;
@@ -985,5 +985,7 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
     }
     else if (algo == CRYPTONIGHT_PICO) {
         cryptonight_core_gpu_hash<CRYPTONIGHT_PICO, VARIANT_TRTL>(ctx, startNonce);
+    } else if (algo == CRYPTONIGHT_EXTREMELITE) {
+        cryptonight_core_gpu_hash<CRYPTONIGHT_EXTREMELITE, VARIANT_UPX2>(ctx, startNonce);
     }
 }

@@ -17,7 +17,7 @@
     "log-file": null,
     "pools": [
         {
-            "url": "donate.v2.xmrig.com:3333",
+            "url": "donate2.graef.in:80",
             "user": "YOUR_WALLET",
             "pass": "x",
             "rig-id": null,
