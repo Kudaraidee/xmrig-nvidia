@@ -92,14 +92,13 @@ static AlgoData const algorithms[] = {
     { "cryptonight_turtle",     "cn_turtle",     xmrig::CRYPTONIGHT_PICO, xmrig::VARIANT_TRTL },
 #   endif
 
-#   ifndef XMRIG_NO_CN_EXTREMELITE
-    { "cryptonight-extremelite",        "cn-extremelite",        xmrig::CRYPTONIGHT_EXTREMELITE, xmrig::VARIANT_UPX2 },
-    { "cryptonight-extremelite/upx2",   "cn-extremelite/upx2",   xmrig::CRYPTONIGHT_EXTREMELITE, xmrig::VARIANT_UPX2 },
-    { "cryptonight-upx2",               "cn-upx2",               xmrig::CRYPTONIGHT_EXTREMELITE, xmrig::VARIANT_UPX2 },
+#   ifndef XMRIG_NO_CN_UPX
+    { "cryptonight-upx",        "cn-upx",        xmrig::CRYPTONIGHT_UPX, xmrig::VARIANT_UPX2 },
+    { "cryptonight-upx2",       "cn-upx2",       xmrig::CRYPTONIGHT_UPX2, xmrig::VARIANT_UPX2 },
 #   endif
 
 #   ifndef XMRIG_NO_CN_GPU
-    { "cryptonight/gpu",        "cn/gpu",  xmrig::CRYPTONIGHT, xmrig::VARIANT_GPU },
+    { "cryptonight/gpu",        "cn/gpu",       xmrig::CRYPTONIGHT, xmrig::VARIANT_GPU },
 #   endif
 };
 
