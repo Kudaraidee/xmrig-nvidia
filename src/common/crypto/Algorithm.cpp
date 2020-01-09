@@ -227,7 +227,7 @@ void xmrig::Algorithm::parseVariant(const char *variant)
         return;
     }
 
-    if (m_algo == xmrig::CRYPTONIGHT_EXTREMELITE) {
+    if (m_algo == xmrig::CRYPTONIGHT_UPX) {
         m_variant = VARIANT_UPX2;
         return;
     }
@@ -275,7 +275,7 @@ void xmrig::Algorithm::setAlgo(Algo algo)
         m_variant = xmrig::VARIANT_TRTL;
     }
 
-    if (m_algo == CRYPTONIGHT_EXTREMELITE && m_variant == VARIANT_AUTO) {
+    if (m_algo == CRYPTONIGHT_UPX && m_variant == VARIANT_AUTO) {
         m_variant = xmrig::VARIANT_UPX2;
     }
 }

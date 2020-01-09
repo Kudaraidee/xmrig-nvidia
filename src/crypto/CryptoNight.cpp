@@ -380,8 +380,8 @@ CryptoNight::cn_hash_fun CryptoNight::fn(xmrig::Algo algorithm, xmrig::AlgoVerif
         nullptr, nullptr, // VARIANT_RWZ
         nullptr, nullptr, // VARIANT_ZLS
         nullptr, nullptr, // VARIANT_DOUBLE
-        cryptonight_single_hash<CRYPTONIGHT_EXTREMELITE, false, VARIANT_UPX2>,
-        cryptonight_single_hash<CRYPTONIGHT_EXTREMELITE, true, VARIANT_UPX2>,
+        cryptonight_single_hash<CRYPTONIGHT_UPX, false, VARIANT_UPX2>,
+        cryptonight_single_hash<CRYPTONIGHT_UPX, true, VARIANT_UPX2>,
 #else
         nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr,
@@ -465,7 +465,7 @@ bool CryptoNight::selfTest() {
 #   endif
 
 #   ifndef XMRIG_NO_CN_EXTREMELITE
-    if (m_algorithm == xmrig::CRYPTONIGHT_EXTREMELITE) {
+    if (m_algorithm == xmrig::CRYPTONIGHT_UPX) {
         return verify(VARIANT_UPX2, test_output_upx2);
     }
 #   endif

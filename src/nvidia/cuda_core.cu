@@ -985,7 +985,7 @@ void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, xmrig::Variant varian
     }
     else if (algo == CRYPTONIGHT_PICO) {
         cryptonight_core_gpu_hash<CRYPTONIGHT_PICO, VARIANT_TRTL>(ctx, startNonce);
-    } else if (algo == CRYPTONIGHT_EXTREMELITE) {
-        cryptonight_core_gpu_hash<CRYPTONIGHT_EXTREMELITE, VARIANT_UPX2>(ctx, startNonce);
+    } else if (algo == CRYPTONIGHT_UPX) {
+        cryptonight_core_gpu_hash<CRYPTONIGHT_UPX, VARIANT_UPX2>(ctx, startNonce);
     }
 }
