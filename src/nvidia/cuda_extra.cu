@@ -1,27 +1,28 @@
 /* XMRig
-* Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
-* Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
-* Copyright 2014      Lucas Jones <https://github.com/lucasjones>
-* Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
-* Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
-* Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
-* Copyright 2018      Lee Clagett <https://github.com/vtnerd>
-* Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
-*
-*   This program is free software: you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License as published by
-*   the Free Software Foundation, either version 3 of the License, or
-*   (at your option) any later version.
-*
-*   This program is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License
-*   along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
+ * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
+ * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
+ * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
+ * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      Spudz76     <https://github.com/Spudz76>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <algorithm>
 #include <stdio.h>
@@ -162,15 +163,22 @@ __global__ void cryptonight_extra_gpu_prepare(
     XOR_BLOCKS_DST(ctx_state + 4, ctx_state + 12, ctx_b);
     memcpy(d_ctx_a + thread * 4, ctx_a, 4 * 4);
 
-    if (VARIANT == xmrig::VARIANT_2) {
-        memcpy(d_ctx_b + thread * 12, ctx_b, 4 * 4);
+    if ((VARIANT == xmrig::VARIANT_WOW) || (VARIANT == xmrig::VARIANT_4)) {
+        memcpy(d_ctx_b + thread * 16, ctx_b, 4 * 4);
         // bx1
         XOR_BLOCKS_DST(ctx_state + 16, ctx_state + 20, ctx_b);
-        memcpy(d_ctx_b + thread * 12 + 4, ctx_b, 4 * 4);
+        memcpy(d_ctx_b + thread * 16 + 4, ctx_b, 4 * 4);
+        // r0, r1, r2, r3
+        memcpy(d_ctx_b + thread * 16 + 2 * 4, ctx_state + 24, 4 * 8);
+    } else if (VARIANT == xmrig::VARIANT_2) {
+        memcpy(d_ctx_b + thread * 16, ctx_b, 4 * 4);
+        // bx1
+        XOR_BLOCKS_DST(ctx_state + 16, ctx_state + 20, ctx_b);
+        memcpy(d_ctx_b + thread * 16 + 4, ctx_b, 4 * 4);
         // division_result
-        memcpy(d_ctx_b + thread * 12 + 2 * 4, ctx_state + 24, 4 * 2);
+        memcpy(d_ctx_b + thread * 16 + 2 * 4, ctx_state + 24, 4 * 2);
         // sqrt_result
-        memcpy(d_ctx_b + thread * 12 + 2 * 4 + 2, ctx_state + 26, 4 * 2);
+        memcpy(d_ctx_b + thread * 16 + 2 * 4 + 2, ctx_state + 26, 4 * 2);
     } else {
         memcpy(d_ctx_b + thread * 4, ctx_b, 4 * 4);
     }
@@ -322,6 +330,9 @@ void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, size_t len)
 
 int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSize)
 {
+    CU_CHECK(ctx->device_id, cuDeviceGet(&ctx->cuDevice, ctx->device_id));
+    CU_CHECK(ctx->device_id, cuCtxCreate(&ctx->cuContext, 0, ctx->cuDevice));
+
     cudaError_t err;
     err = cudaSetDevice(ctx->device_id);
     if (err != cudaSuccess) {
@@ -359,7 +370,7 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
         CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state2, 50 * sizeof(uint32_t) * wsize));
     }
     else {
-        ctx_b_size *= 3;
+        ctx_b_size *= 4;
         ctx->d_ctx_state2 = ctx->d_ctx_state;
     }
 
@@ -392,7 +403,13 @@ void cryptonight_extra_cpu_prepare(nvid_ctx *ctx, uint32_t startNonce, xmrig::Al
     if (algo == xmrig::CRYPTONIGHT_HEAVY) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_AUTO><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
             ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
-    } else if (variant == xmrig::VARIANT_2 || variant == xmrig::VARIANT_HALF || variant == xmrig::VARIANT_TRTL) {
+    } else if (variant == xmrig::VARIANT_WOW) {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_WOW> << <grid, block >> > (wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+    } else if (variant == xmrig::VARIANT_4) {
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_4> << <grid, block >> > (wsize, ctx->d_input, ctx->inputlen, startNonce,
+            ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
+    } else if (variant == xmrig::VARIANT_2 || variant == xmrig::VARIANT_HALF || variant == xmrig::VARIANT_TRTL || variant == xmrig::VARIANT_RWZ || variant == xmrig::VARIANT_ZLS || variant == xmrig::VARIANT_DOUBLE || variant == xmrig::VARIANT_UPX2) {
         CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<xmrig::CRYPTONIGHT, xmrig::VARIANT_2><<<grid, block >>>(wsize, ctx->d_input, ctx->inputlen, startNonce,
             ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
     } else {
@@ -513,6 +530,28 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
         return 1;
     }
 
+    // a device must be selected to get the right memory usage later on
+    if (cudaSetDevice(ctx->device_id) != cudaSuccess) {
+        printf("WARNING: NVIDIA GPU %d: cannot be selected.\n", ctx->device_id);
+        return 2;
+    }
+
+    // trigger that a context on the gpu will be allocated
+    int* tmp;
+    if (cudaMalloc(&tmp, 256) != cudaSuccess) {
+        printf("WARNING: NVIDIA GPU %d: context cannot be created.\n", ctx->device_id);
+        return 3;
+    }
+
+    size_t freeMemory  = 0;
+    size_t totalMemory = 0;
+
+    CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
+    CUDA_CHECK(ctx->device_id, cudaFree(tmp));
+    CUDA_CHECK(ctx->device_id, cudaDeviceReset());
+    ctx->device_memoryFree = freeMemory;
+    ctx->device_memoryTotal = totalMemory;
+
     cudaDeviceProp props;
     err = cudaGetDeviceProperties(&props, ctx->device_id);
     if (err != cudaSuccess) {
@@ -576,26 +615,6 @@ int cuda_get_deviceinfo(nvid_ctx* ctx, xmrig::Algo algo, bool isCNv2)
             // limit memory usage for sm 20 GPUs
             maxMemUsage = size_t(1024u) * byteToMiB;
         }
-
-        // a device must be selected to get the right memory usage later on
-        if (cudaSetDevice(ctx->device_id) != cudaSuccess) {
-            printf("WARNING: NVIDIA GPU %d: cannot be selected.\n", ctx->device_id);
-            return 2;
-        }
-
-        // trigger that a context on the gpu will be allocated
-        int* tmp;
-        if (cudaMalloc(&tmp, 256) != cudaSuccess) {
-            printf("WARNING: NVIDIA GPU %d: context cannot be created.\n", ctx->device_id);
-            return 3;
-        }
-
-        size_t freeMemory  = 0;
-        size_t totalMemory = 0;
-
-        CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
-        CUDA_CHECK(ctx->device_id, cudaFree(tmp));
-        CUDA_CHECK(ctx->device_id, cudaDeviceReset());
 
         const size_t hashMemSize = xmrig::cn_select_memory(algo);
 #       ifdef _WIN32
